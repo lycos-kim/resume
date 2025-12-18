@@ -1,0 +1,62 @@
+# Next.js 15+ & App Router 프로젝트 구조 규칙
+
+너는 숙련된 Next.js 개발자로서 아래 구조와 원칙을 엄격히 준수하여 코드를 작성해야 한다.
+
+## 1. 폴더 구조 원칙
+- 모든 소스 코드는 `src/` 폴더 내에 위치한다.
+- `src/app/`: 라우팅 및 페이지 레이아웃을 담당한다.
+- `src/components/`: 여러 도메인에서 공통으로 사용되는 UI 컴포넌트(Atomic Design의 Atoms/Molecules 수준)를 관리한다.
+- `src/features/`: 도메인 기반 기능 단위로 관리한다 (예: `features/auth`, `features/posts`). 각 폴더 내에 해당 기능 전용 `components`, `hooks`, `types`, `api`를 둔다.
+- `src/lib/`: 외부 라이브러리 설정 (Prisma, Supabase, Axios 인스턴스 등).
+- `src/hooks/`: 2개 이상의 feature에서 공유되는 범용 커스텀 훅.
+
+## 2. Co-location (근접 배치) 규칙
+- 특정 페이지에서만 사용되는 컴포넌트는 `src/app/.../_components/` 폴더에 위치시킨다.
+- 특정 기능(Feature)에 종속된 로직은 `src/features/[feature-name]/`에 모아 관리한다.
+- 컴포넌트와 같은 위치에 `.test.ts`, `.types.ts`를 두는 것을 권장한다.
+
+## 3. Server vs Client 컴포넌트 전략
+- 기본적으로 모든 컴포넌트는 **Server Components**로 작성한다.
+- `useState`, `useEffect`, 이벤트 리스너 등 클라이언트 상호작용이 필요한 경우에만 '말단 컴포넌트'에 `'use client'`를 사용한다.
+- 데이터 페칭은 가능한 서버 컴포넌트(async/await)에서 수행한다.
+
+## 4. 코드 스타일 가이드
+- **Server Actions**: 데이터 변경(Mutation)은 `src/features/.../actions.ts`에 정의하여 사용한다.
+- **Types**: `any` 사용을 금지하며, `src/types/`에는 전역 타입을, 기능별 타입은 해당 feature 폴더 내에 정의한다.
+- **Naming**: 컴포넌트는 PascalCase, 일반 함수/변수는 camelCase를 사용한다.
+- **Import**: 절대 경로(Alias) `@/...`를 사용하여 임포트한다.
+
+## 5. 예외 사항
+- 라우팅에 포함되지 않아야 하는 폴더는 반드시 언더바(`_`) 접두사를 붙인다 (예: `_components`).
+# 6. 디자인 및 UI/UX 원칙 (2025 트렌드 준수)
+
+너는 UI/UX 디자이너 겸 엔지니어로서 아래의 시각적 원칙을 준수하여 코드를 작성한다.
+
+### 6.1 일관된 레이아웃 및 간격
+- **Spacing**: 모든 간격(margin, padding)은 4의 배수(Tailwind: `p-4`, `m-8` 등)를 기본으로 사용한다.
+- **Max-Width**: 컨텐츠 영역은 가독성을 위해 최대 폭을 제한한다 (예: `max-w-7xl`, `mx-auto`).
+- **Bento Grid**: 대시보드나 복잡한 정보 레이아웃은 현대적인 Bento Grid 스타일(다양한 크기의 카드 조합)을 우선 고려한다.
+
+### 6.2 타이포그래피 (Typography)
+- **Hierarchy**: 명확한 시각적 위계(Visual Hierarchy)를 부여한다. 제목은 `font-bold`와 `tracking-tight`를 적용하고, 본문은 `text-slate-600` (Dark 모드: `text-slate-400`)으로 대비를 준다.
+- **Readability**: 줄 간격은 `leading-relaxed`, 자간은 `tracking-normal`을 기본으로 설정한다.
+
+### 6.3 시각적 요소 및 피드백
+- **Soft Shadows**: 강한 테두리 대신 부드러운 그림자(`shadow-sm`, `hover:shadow-md`)를 사용하여 깊이감을 준다.
+- **Rounding**: 모든 버튼과 카드는 둥근 모서리(`rounded-xl` 이상)를 기본으로 한다.
+- **Transitions**: 모든 상호작용(Hover, Active)에는 부드러운 애니메이션(`transition-all duration-200 ease-in-out`)을 적용한다.
+- **Empty/Loading States**: 데이터가 없거나 로딩 중일 때 Skeleton UI(`animate-pulse`) 또는 세련된 Empty State를 반드시 포함한다.
+
+### 6.4 컬러 전략 (Dark/Light Mode)
+- **Neutral Base**: 배경색은 완전한 검정(#000)이나 흰색(#fff)보다는 미세한 톤이 섞인 컬러를 사용한다 (예: `bg-slate-50`, `dark:bg-slate-950`).
+- **Point Color**: 브랜드 컬러(Primary)는 일관되게 사용하고, 클릭 가능한 요소에는 반드시 `hover:brightness-110` 등의 변화를 준다.
+
+### 6.5 컴포넌트 라이브러리 활용
+- **Shadcn UI**: UI 컴포넌트 생성 시 Shadcn UI(Radix UI + Tailwind) 스타일을 기반으로 접근한다.
+- **Lucide Icons**: 아이콘이 필요한 경우 `lucide-react` 라이브러리를 사용하며, 아이콘 크기는 `w-5 h-5`를 표준으로 한다.
+
+### 6.6 에러 핸들링 및 데이터 검증
+- **Zod Validation**: 클라이언트 입력값이나 API 응답 데이터는 반드시 `zod`를 사용하여 스키마 검증을 수행한다.
+- **Error Boundaries**: 모든 페이지와 주요 섹션에는 Next.js의 `error.tsx` 또는 커스텀 Error Boundary를 배치하여 앱 전체가 뻗지 않도록 한다.
+- **Server Action Responses**: 서버 액션의 결과는 항상 `{ success: boolean, data?: T, error?: string }` 형태의 객체로 반환하여 클라이언트에서 일관되게 처리한다.
+- **Safe Data Fetching**: API 호출 시 반드시 `try-catch` 블록을 사용하고, 사용자에게 친절한 에러 메시지를 노출한다. 
