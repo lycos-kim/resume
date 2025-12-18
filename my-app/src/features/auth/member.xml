@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<members>
+  <member>
+    <id>lycos.kim</id>
+    <password>778899</password>
+    <name>김라이코스</name>
+    <email>lycos@example.com</email>
+  </member>
+  <member>
+    <id>admin</id>
+    <password>admin123</password>
+    <name>관리자</name>
+    <email>admin@example.com</email>
+  </member>
+  <member>
+    <id>test</id>
+    <password>test1234</password>
+    <name>테스트 사용자</name>
+    <email>test@example.com</email>
+  </member>
+</members>

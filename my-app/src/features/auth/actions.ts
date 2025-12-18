@@ -1,22 +1,81 @@
+'use server'
+
 import { z } from "zod"
-import { cn } from "@/lib/utils"
+import fs from "fs"
+import path from "path"
+import { loginSchema, LoginInput } from './schema'
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-})
+async function readMemberXml() {
+  const candidates = [
+    path.join(process.cwd(), 'src', 'features', 'auth', 'member.xml'),
+    path.join(process.cwd(), 'my-app', 'src', 'features', 'auth', 'member.xml'),
+  ]
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        return fs.readFileSync(p, 'utf-8')
+      }
+    } catch (_) {
+      // ignore and try next
+    }
+  }
+  return null
+}
 
-export type LoginInput = z.infer<typeof loginSchema>
+interface Member {
+  id: string | null
+  password: string | null
+  name: string | null
+  email: string | null
+}
+
+function parseMembersFromXml(xml: string): Member[] {
+  const members: Member[] = []
+  const memberRegex = /<member>([\s\S]*?)<\/member>/g
+  let match
+  while ((match = memberRegex.exec(xml)) !== null) {
+    const memberXml = match[1]
+    const id = /<id>(.*?)<\/id>/s.exec(memberXml)?.[1]?.trim() || null
+    const password = /<password>(.*?)<\/password>/s.exec(memberXml)?.[1]?.trim() || null
+    const name = /<name>(.*?)<\/name>/s.exec(memberXml)?.[1]?.trim() || null
+    const email = /<email>(.*?)<\/email>/s.exec(memberXml)?.[1]?.trim() || null
+    members.push({ id, password, name, email })
+  }
+  return members
+}
 
 export async function loginAction(formData: LoginInput) {
   try {
     const parsed = loginSchema.parse(formData)
-    // TODO: replace with real auth call (DB / external service)
-    const user = { id: "user_1", email: parsed.email }
 
-    return { success: true, data: user }
+    const xml = await readMemberXml()
+    if (!xml) {
+      return { success: false, error: 'Member database not found' }
+    }
+    
+    const members = parseMembersFromXml(xml)
+    const inputId = parsed.id
+    const inputPw = parsed.password
+
+    const member = members.find(m => m.id === inputId && m.password === inputPw)
+    
+    if (member) {
+      const user = { 
+        id: member.id, 
+        name: member.name,
+        email: member.email
+      }
+      return { success: true, data: user }
+    }
+
+    return { success: false, error: 'Invalid credentials' }
   } catch (err) {
-    const message = err instanceof z.ZodError ? err.errors.map(e => e.message).join(', ') : 'Unknown error'
+    let message = 'Unknown error'
+    if (err instanceof z.ZodError) {
+      const flattened = err.flatten()
+      const errors = Object.values(flattened.fieldErrors).flat()
+      message = errors.length > 0 ? errors[0] : 'Validation failed'
+    }
     return { success: false, error: message }
   }
 }

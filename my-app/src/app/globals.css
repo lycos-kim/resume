@@ -1,8 +1,5 @@
-
-@import "tw-animate-css";
-
-@plugin "tailwindcss-animate";
-
+/* Removed external `tw-animate-css` import and @plugin rule.
+  The `tailwindcss-animate` plugin is registered in tailwind.config.cjs instead. */
 @custom-variant dark (&:is(.dark *));
 
 @tailwind base;

@@ -57,6 +57,30 @@
 
 ### 6.6 에러 핸들링 및 데이터 검증
 - **Zod Validation**: 클라이언트 입력값이나 API 응답 데이터는 반드시 `zod`를 사용하여 스키마 검증을 수행한다.
+- **Zod Error Handling**: Zod 에러는 `safeParse()` 사용 후 반드시 `result.error.flatten()` 메서드로 필드별 에러를 추출한다. 절대 `result.error.errors` 직렬화를 시도하지 말 것.
 - **Error Boundaries**: 모든 페이지와 주요 섹션에는 Next.js의 `error.tsx` 또는 커스텀 Error Boundary를 배치하여 앱 전체가 뻗지 않도록 한다.
 - **Server Action Responses**: 서버 액션의 결과는 항상 `{ success: boolean, data?: T, error?: string }` 형태의 객체로 반환하여 클라이언트에서 일관되게 처리한다.
-- **Safe Data Fetching**: API 호출 시 반드시 `try-catch` 블록을 사용하고, 사용자에게 친절한 에러 메시지를 노출한다. 
+- **Safe Data Fetching**: API 호출 시 반드시 `try-catch` 블록을 사용하고, 사용자에게 친절한 에러 메시지를 노출한다.
+
+## 7. Zod 검증 규칙
+- **스키마 분리**: Zod 스키마는 `schema.ts` 파일에 정의하고, 서버 전용 `fs`, `path` 같은 Node.js 모듈을 import하는 `actions.ts`와 분리한다. (클라이언트 번들 최소화)
+- **필드 에러 추출**: 클라이언트에서 검증 에러를 처리할 때는 항상 다음 패턴을 사용:
+  ```typescript
+  const result = loginSchema.safeParse(values)
+  if (!result.success) {
+    const flattened = result.error.flatten()
+    const fieldErrors = flattened.fieldErrors
+    // fieldErrors: { email?: string[], password?: string[] }
+  }
+  ```
+- **에러 메시지 명시**: 모든 Zod 스키마 필드에는 한글 에러 메시지를 명시한다.
+  ```typescript
+  z.string().email('유효한 이메일을 입력해주세요')
+  z.string().min(1, '필수 항목입니다')
+  ```
+- **타입 안전성**: 스키마로부터 `z.infer<typeof schema>`를 사용해 타입을 추출하고, `any` 타입 사용을 금지한다.
+
+## 8. 폼 및 검증 규칙
+- **Server Action 폼**: `<form action={serverAction}>`에서 서버 액션은 'use server' 디렉티브를 반드시 포함해야 한다.
+- **중첩 폼 금지**: HTML `<form>` 태그는 절대 중첩될 수 없다. 클라이언트 검증이 필요하면 부모 폼의 submit 이벤트를 가로채거나 useFormStatus를 사용한다.
+- **클라이언트 검증**: 클라이언트 컴포넌트에서 폼 검증 시 리스너는 항상 `useEffect`로 관리하고, 정리(cleanup) 함수를 반드시 포함한다.
